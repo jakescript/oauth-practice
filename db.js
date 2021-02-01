@@ -1,7 +1,7 @@
 const axios = require('axios');
 const jwt = require('jsonwebtoken');
 const Sequelize = require('sequelize');
-const { STRING, INTEGER, UUID, UUIDV4 } = Sequelize;
+const { STRING, INTEGER, UUID, UUIDV4, DATE } = Sequelize;
 const config = {
   logging: false
 };
@@ -22,10 +22,17 @@ const User = conn.define('user', {
   avatar: STRING
 });
 
+const UserLogin = conn.define("userlogin", {
+  loggedAt: DATE
+});
+
+User.hasMany(UserLogin);
+UserLogin.belongsTo(User);
+
 User.byToken = async(token)=> {
   try {
     const { username } = await jwt.verify(token, process.env.JWT);
-    const user = await User.findOne({where:{username}});
+    const user = await User.findOne({where:{username}, include: UserLogin});
     if(user){
       return user;
     }
@@ -47,6 +54,7 @@ const GITHUB_ACCESS_TOKEN_FOR_USER_URL = 'https://api.github.com/user';
 //the authenticate methods is passed a code which has been sent by github
 //if successful it will return a token which identifies a user in this app
 User.authenticate = async(code, client_id, client_secret)=> {
+  // returns back an access token used to get the user from the github api
   let response = await axios.post("https://github.com/login/oauth/access_token", {
     client_id,
     client_secret,
@@ -61,12 +69,13 @@ User.authenticate = async(code, client_id, client_secret)=> {
     }
   })
 
-  console.log(response.data)
   const {login, id, avatar_url} = response.data
+  // check if the same user exists in our database and act according
   let user = await User.findOne({
-    where: {username: login}
+    where: {username: login},
+    include: UserLogin
   })
-
+  // no user means we make one with that github username and id
   if(!user){
     user = await User.create({
       username: login,
@@ -74,7 +83,9 @@ User.authenticate = async(code, client_id, client_secret)=> {
       avatar: avatar_url
     })
   }
-
+  await UserLogin.create({loggedAt: Date.now(), userId: user.id});
+  await user.save();
+  // sign jwt with what we want to use to find the user in the future
   const jwtToken = jwt.sign({username: user.username}, process.env.JWT)
   return jwtToken
 };

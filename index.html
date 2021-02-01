@@ -46,6 +46,8 @@
         render(){
           const { auth } = this.state;
           const { login, logout } = this;
+          // const loginList = auth.userLogins.map(login => <li>{login.loggedAt}</li>)
+          console.log(auth)
           if(!auth.id){
             return (
               <a href={`https://github.com/login/oauth/authorize?client_id=${window.GITHUB_CLIENT_ID}`}>Login to Github</a>
@@ -56,6 +58,10 @@
               <div>
                 <button onClick={ logout }>Logout ({ auth.username})</button>
                 <img src={auth.avatar}/>
+
+                <ul>
+
+                </ul>
               </div>
             );
           }

@@ -24,6 +24,8 @@ app.get('/api/auth', async(req, res, next)=> {
 
 app.get('/cb/github', async(req, res, next)=> {
   try {
+    // exchange code for token - use token in github api - check against our db
+    // return a jwt with username as payload
     const token = await User.authenticate(
       req.query.code,
       process.env.GITHUB_CLIENT_ID,
