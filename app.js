@@ -1,10 +1,6 @@
 const express = require('express');
 const app = express();
 
-const env = require("./secrets")
-process.env.GITHUB_CLIENT_ID = env.GITHUB_CLIENT_ID
-process.env.GITHUB_CLIENT_SECRET = env.GITHUB_CLIENT_SECRET
-
 app.use(express.json());
 app.engine('html', require('ejs').renderFile);
 
